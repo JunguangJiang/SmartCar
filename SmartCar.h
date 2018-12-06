@@ -17,7 +17,12 @@ typedef struct CarControlMsg{//小车串口通信数据
 } cc_message_t;
 
 typedef nx_struct RadioMsg{//小车和手柄之间通信数据
-    nx_uint8_t button;//第i位对应Si,因此第0位和第7位均无效
+    nx_bool S1;//按下S1为TRUE
+    nx_bool S2;
+    nx_bool S3;
+    nx_bool S4;
+    nx_bool S5;
+    nx_bool S6;
     nx_uint16_t x;
     nx_uint16_t y;
 } r_message_t;

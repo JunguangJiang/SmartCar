@@ -35,9 +35,9 @@ implementation{
         if(!radioBusy){
             r_message_t* rpkt = (r_message_t*)(call Packet.getPayload(&radioPkt, NULL));
             //To Do:将按钮和手柄的状态写入到rpkt中
-            rpkt->button = counter&7;//用计数器做测试
+            rpkt->S1 = counter&1;//用计数器做测试
             counter++;
-            printf("button:%i\n", rpkt->button);
+            printf("button:%i\n", rpkt->S1);
             printfflush();
 
             if(call AMSend.send(AM_BROADCAST_ADDR, &radioPkt, sizeof(r_message_t)) == SUCCESS){

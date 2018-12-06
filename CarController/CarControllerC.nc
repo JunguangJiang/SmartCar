@@ -38,8 +38,8 @@ implementation{
         if(len == sizeof(r_message_t)){
             r_message_t* rmpkt = (r_message_t*)payload;
             //根据rmpkt中的内容对小车进行操作
-            call Leds.set(rmpkt->button);
-            printf("button:%i\n", rmpkt->button);
+            call Leds.set(rmpkt->S1);
+            printf("button:%i\n", rmpkt->S1);
             printfflush();
         }
         return msg;
