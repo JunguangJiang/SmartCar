@@ -23,7 +23,7 @@ typedef nx_struct RadioMsg{//小车和手柄之间通信数据
     nx_bool S4;
     nx_bool S5;
     nx_bool S6;
-    nx_uint16_t x;
-    nx_uint16_t y;
+    nx_int16_t x;
+    nx_int16_t y;
 } r_message_t;
 #endif
