@@ -1,4 +1,4 @@
-interface Car{
+interface Wheel{
     command error_t goForward(uint16_t value);//前进
     command error_t goBackward(uint16_t value);//后退
     command error_t turnLeft(uint16_t value);//左转

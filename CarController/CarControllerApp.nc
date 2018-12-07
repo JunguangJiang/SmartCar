@@ -17,7 +17,7 @@ implementation{
     components ActiveMessageC as AM;
     components new AMReceiverC(AM_SMARTCAR);
     //与小车相关的组件
-    //components CarC as Car;
+    components CarC as Car;
 
     App.Boot->MainC;
     App.Leds->LedsC;
@@ -28,5 +28,6 @@ implementation{
     App.AMControl->AM;
     App.Receive->AMReceiverC;
     //和小车的串口通信
-    //App.Car->Car;
+    App.Wheel->Car;
+    App.Arm->Car;
 }
