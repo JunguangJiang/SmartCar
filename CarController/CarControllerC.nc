@@ -20,17 +20,17 @@ implementation{
     int8_t controlMode = CONTROL_UP_DOWN;//S3的控制模式
 
     void processRadioMsg(r_message_t* radioMsg){//处理无线信息
-        if(radioMsg->S1){
+        if(radioMsg->S1){//按下停止按钮
             speed = 0;
             call Wheel.stop();
             printf("stop\n");
         }
-        if(radioMsg->S2){
+        if(radioMsg->S2){//按下加速按钮
             speed += DELTA_SPEED;
             speed = min(speed, MAX_SPEED);
             printf("speed=%i\n", speed);
         }
-        if(radioMsg->S3){
+        if(radioMsg->S3){//按下状态控制按钮
             if(controlMode == CONTROL_UP_DOWN){
                 controlMode = CONTROL_LEFT_RIGHT;
             }else{
@@ -38,29 +38,30 @@ implementation{
             }
             printf("change control mode:%i\n", controlMode);
         }
-        if(radioMsg->S4){
+        if(radioMsg->S4){//按下机械臂归位按钮
             printf("home\n");
             call Arm.home();
         }
-        if(radioMsg->S5){
-            if(controlMode == CONTROL_UP_DOWN){
+        if(radioMsg->S5){//按下减少按钮
+            if(controlMode == CONTROL_UP_DOWN){//当前控制机械臂的高度
                 printf("come down\n");
                 call Arm.comeDown();
-            }else{
+            }else{//当前控制机械臂的左右
                 printf("turn left\n");
                 call Arm.turnLeft();
             }
         }
-        if(radioMsg->S6){
-            if(controlMode == CONTROL_UP_DOWN){
+        if(radioMsg->S6){//按下增加按钮
+            if(controlMode == CONTROL_UP_DOWN){//当前控制机械臂的高度
                 printf("raise up\n");
                 call Arm.raiseUp();
-            }else{
+            }else{//当前控制机械臂的左右
                 printf("turn right\n");
                 call Arm.turnRight();
             }
         }
 
+        //每次收到无线信号后，都会对小车的运动速度和方向进行调整
         if(speed > 0){
             vx = (radioMsg->x * speed / ROCKER_RADIUS);
             vy = (radioMsg->y * speed / ROCKER_RADIUS);

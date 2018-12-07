@@ -12,7 +12,7 @@ implementation{
 
     components HplMsp430Usart0C;
     components new Msp430Uart0C();
-    components HplMsp430GeneralIOC;
+    //components HplMsp430GeneralIOC;
     CarP.Resource -> Msp430Uart0C;
     CarP.HplMsp430Usart -> HplMsp430Usart0C;
     //CarP.HplMsp430UsartInterrupts -> HplMsp430Usart0C;

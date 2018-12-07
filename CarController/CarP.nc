@@ -1,5 +1,8 @@
 #include "../SmartCar.h"
 #include <msp430usart.h>
+#include "printf.h"
+#include "queue.h"
+
 module CarP @safe(){
     provides{
         interface Wheel;
@@ -16,18 +19,10 @@ module CarP @safe(){
 implementation{
     cc_message_t car_command;//小车串口控制命令
 
-    uint8_t message[8]; 
-    int i;
+    uint8_t message[8]={1,2,1,0,0,0xff,0xff,0}; //串口通信序列
+    int8_t i;
 
     int16_t angle[3];//三个角度
-    
-    error_t setCarCommand(uint8_t type, uint16_t value){
-        atomic{
-            car_command.type = 2;
-            car_command.value = value;
-        }
-        return call Resource.request();
-    }
 
     msp430_uart_union_config_t config = {
         {
@@ -51,23 +46,28 @@ implementation{
     };
 
     command error_t Wheel.goForward(uint16_t value){//小车前进
-        return setCarCommand(2,value);
+        insertQueue(2,value);
+        return call Resource.request();
     }
 
     command error_t Wheel.goBackward(uint16_t value){//小车后退
-        return setCarCommand(3,value);
+        insertQueue(3,value);
+        return call Resource.request();
     }
 
     command error_t Wheel.turnLeft(uint16_t value){//小车左转
-        return setCarCommand(4,value);
+        insertQueue(4,value);
+        return call Resource.request();
     }
 
     command error_t Wheel.turnRight(uint16_t value){//小车右转
-        return setCarCommand(5,value);
+        insertQueue(5,value);
+        return call Resource.request();
     }
 
     command error_t Wheel.stop(){
-        return setCarCommand(6,0);
+        insertQueue(6,0);
+        return call Resource.request();
     }
 
     void initAngle(){//初始化角度
@@ -77,57 +77,72 @@ implementation{
     }
 
     command error_t Arm.comeDown(){
-        angle[0] -= DELTA_ANGLE0;
-        angle[0] = max(MIN_ANGLE, angle[0]);
+        atomic{
+            angle[0] -= DELTA_ANGLE0;
+            angle[0] = max(MIN_ANGLE, angle[0]);
+        }
         printf("angle0=%i\n",angle[0]);
-        return setCarCommand(1,angle[0]);
+        insertQueue(1,angle[0]);
+        return call Resource.request();
     }
 
     command error_t Arm.raiseUp(){
-        angle[0] += DELTA_ANGLE0;
-        angle[0] = min(MAX_ANGLE, angle[0]);
+        atomic{
+            angle[0] += DELTA_ANGLE0;
+            angle[0] = min(MAX_ANGLE, angle[0]);
+        }
         printf("angle0=%i\n",angle[0]);
-        return setCarCommand(1,angle[0]);
+        insertQueue(1,angle[0]);
+        return call Resource.request();
     }
 
     command error_t Arm.turnLeft(){
-        angle[1] -= DELTA_ANGLE1;
-        angle[1] = max(MIN_ANGLE, angle[1]);
+        atomic{
+            angle[1] -= DELTA_ANGLE1;
+            angle[1] = max(MIN_ANGLE, angle[1]);
+        }
         printf("angle1=%i\n",angle[1]);
-        return setCarCommand(7, angle[1]);
+        insertQueue(7,angle[1]);
+        return call Resource.request();
     }
 
     command error_t Arm.turnRight(){
-        angle[1] += DELTA_ANGLE1;
-        angle[1] = min(MAX_ANGLE, angle[1]);
+        atomic{
+            angle[1] += DELTA_ANGLE1;
+            angle[1] = min(MAX_ANGLE, angle[1]);
+        }
         printf("angle1=%i\n",angle[1]);
-        return setCarCommand(7, angle[1]);
+        insertQueue(7,angle[1]);
+        return call Resource.request();
     }
 
     command error_t Arm.home(){
         initAngle();
-        setCarCommand(1, angle[0]);
-        setCarCommand(7, angle[1]);
-        return setCarCommand(8, angle[2]);
+        insertQueue(1, angle[0]);
+        insertQueue(7, angle[1]);
+        insertQueue(8,angle[2]);
+        return call Resource.request();
     }
 
     event void Resource.granted(){
         call HplMsp430Usart.setModeUart(&config);
         call HplMsp430Usart.enableUart();
-        atomic{
-            U0CTL &= ~SYNC;
-            message[0] = 0x01;
-            message[1] = 0x02;
-            message[2] = car_command.type;
-            message[3] = car_command.value / 256;
-            message[4] = car_command.value % 256;
-            message[5] = 0xFF;
-            message[6] = 0xFF;
-            message[7] = 0x00;
-            for(i=0; i<7; i++){
-                call HplMsp430Usart.tx(message[i]);
-                while(!call HplMsp430Usart.isTxEmpty());
-            }
+        while(!isQueueEmpty()){
+            atomic{
+                U0CTL &= ~SYNC;
+                car_command = removeFromQueue();
+                message[2] = car_command.type;
+                message[3] = car_command.value / 256;
+                message[4] = car_command.value % 256;
+                printf("transfering :");
+                for(i=0; i<8; i++){
+                    printf("%u ", message[i]);
+                    call HplMsp430Usart.tx(message[i]);
+                    while(!call HplMsp430Usart.isTxEmpty());
+                }
+                printf("\n");
+                printfflush();
+            }       
         }
         call Resource.release();
     }
