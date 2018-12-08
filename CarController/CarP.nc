@@ -130,6 +130,7 @@ implementation{
         while(!isQueueEmpty()){
             atomic{
                 U0CTL &= ~SYNC;
+                printf("Queue size=%i\n", queueSize());
                 car_command = removeFromQueue();
                 message[2] = car_command.type;
                 message[3] = car_command.value / 256;
