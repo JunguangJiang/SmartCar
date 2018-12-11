@@ -4,24 +4,26 @@
 enum{
     AM_SMARTCAR=5,//无线通信时的AM标志号，接收方和发送方需要相同
     TIMER_PERIOD_MILLI = 250,//定时器触发时间间隔
+    TIMER_PERIOD_MILLI_TEST = 2500,//定时器触发时间间隔
 
-
-    DELTA_SPEED = 200,//速度间隔
-    MIN_SPEED = 100,//最小速度
-    MAX_SPEED = 800,//最大速度
+    MIN_SPEED = 0,//最小速度
+    MAX_SPEED = 1600,//最大速度
+    
     MIN_ANGLE = 1800,//最小转动角度
     MAX_ANGLE = 5000,//最大转动角度
-    DELTA_ANGLE0 = 800,
-    DELTA_ANGLE1 = 800,
-    DELTA_ANGLE2 = 800,
-    INIT_ANGLE0 = 3000,//初始转动角度
-    INIT_ANGLE1 = 3000,
-    INIT_ANGLE2 = 3000,
+    DELTA_ANGLE0 = 400,
+    DELTA_ANGLE1 = 400,
+    DELTA_ANGLE2 = 400,
+    INIT_ANGLE0 = 3200,//初始转动角度
+    INIT_ANGLE1 = 2600,
+    INIT_ANGLE2 = 3400,
 
-    ROCKER_RADIUS = 4000,//摇杆半径
-
-    CONTROL_UP_DOWN = 0,//S3控制机械臂上升还是下降
-    CONTROL_LEFT_RIGHT = 1,//S3控制机械臂左右移动
+    ROCKER_RANGE = 4096,//摇杆半径
+    THRESHOLD = 450,
+    XMIN = ROCKER_RANGE/2 - THRESHOLD,
+    XMAX = ROCKER_RANGE/2 + THRESHOLD,
+    YMIN = ROCKER_RANGE/2 - THRESHOLD,
+    YMAX = ROCKER_RANGE/2 + THRESHOLD,
 };
 
 typedef struct CarControlMsg{//小车串口通信数据
