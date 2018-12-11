@@ -1,5 +1,6 @@
 #include <Timer.h>
 #include "../SmartCar.h"
+#include "printf.h"
 module HoldhandC {
     uses interface Boot;
     uses interface Leds;
@@ -17,7 +18,8 @@ implementation {
     bool radioBusy = FALSE;//无线电信道是否处于发送忙的状态
     message_t radioPkt;//发送的无线数据包
     bool isButtonBusy = TRUE;
-    r_message_t lastPkt;
+    nx_uint16_t lastX;
+    nx_uint16_t lastY;
     r_message_t currentPkt;
 
     event void Boot.booted() {
@@ -26,13 +28,6 @@ implementation {
 
     event void AMControl.startDone(error_t err) {
         if (err == SUCCESS) {
-            lastPkt.S1 = FALSE;
-            lastPkt.S2 = FALSE;
-            lastPkt.S3 = FALSE;
-            lastPkt.S4 = FALSE;
-            lastPkt.S5 = FALSE;
-            lastPkt.S6 = FALSE;
-
             currentPkt.S1 = FALSE;
             currentPkt.S2 = FALSE;
             currentPkt.S3 = FALSE;
@@ -61,7 +56,7 @@ implementation {
     }
 
     bool isToSend() {
-      return !(currentPkt.x == lastPkt.x && currentPkt.y == lastPkt.y &&
+      return !((currentPkt.x - lastX < 100 || lastX - currentPkt.x  < 100) && (currentPkt.y - lastY < 100 || lastY - currentPkt.y < 100) &&
          currentPkt.S1 == FALSE && currentPkt.S2 == FALSE && currentPkt.S3 == FALSE &&
          currentPkt.S4 == FALSE && currentPkt.S5 == FALSE && currentPkt.S6 == FALSE);
     }
@@ -71,7 +66,9 @@ implementation {
     bool sendPacket() {
         if (!radioBusy && isToSend()) {
             r_message_t* rpkt = (r_message_t*)(call Packet.getPayload(&radioPkt, sizeof(r_message_t)));
-            lastPkt = currentPkt;
+            printf("%d %d ", currentPkt.x - lastX, currentPkt.y - lastY);
+            lastX = currentPkt.x;
+            lastY = currentPkt.y;
             call Leds.led2Toggle();
             rpkt->S1 = currentPkt.S1;
             rpkt->S2 = currentPkt.S2;
@@ -79,6 +76,13 @@ implementation {
             rpkt->S4 = currentPkt.S4;
             rpkt->S5 = currentPkt.S5;
             rpkt->S6 = currentPkt.S6;
+            printf("S1:%d ", currentPkt.S1);
+            printf("S2:%d ", currentPkt.S2);
+            printf("S3:%d ", currentPkt.S3);
+            printf("S4:%d ", currentPkt.S4);
+            printf("S5:%d ", currentPkt.S5);
+            printf("S6:%d\n", currentPkt.S6);
+            printfflush();
             rpkt->x = currentPkt.x;
             rpkt->y = currentPkt.y;
             /* printf("button:%i\n", rpkt->S1);
@@ -110,27 +114,27 @@ implementation {
     }
 
     event void Button.readS1Done(error_t state) {
-        currentPkt.S1 = state;
+        currentPkt.S1 = !state;
     }
 
     event void Button.readS2Done(error_t state) {
-        currentPkt.S2 = state;
+        currentPkt.S4 = !state;
     }
 
     event void Button.readS3Done(error_t state) {
-        currentPkt.S3 = state;
+        currentPkt.S2 = !state;
     }
 
     event void Button.readS4Done(error_t state) {
-        currentPkt.S4 = state;
+        currentPkt.S5 = FALSE;
     }
 
     event void Button.readS5Done(error_t state) {
-        currentPkt.S5 = state;
+        currentPkt.S3 = !state;
     }
 
     event void Button.readS6Done(error_t state) {
-        currentPkt.S6 = state;
+        currentPkt.S6 = !state;
     }
 
     event void ReadX.readDone(error_t result, uint16_t data) {

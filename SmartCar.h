@@ -3,7 +3,7 @@
 
 enum{
     AM_SMARTCAR=5,//无线通信时的AM标志号，接收方和发送方需要相同
-    TIMER_PERIOD_MILLI = 250,//定时器触发时间间隔
+    TIMER_PERIOD_MILLI = 100,//定时器触发时间间隔
     TIMER_PERIOD_MILLI_TEST = 2500,//小车控制中测试用，定时器触发时间间隔
 
     MIN_SPEED = 0,//最小速度
