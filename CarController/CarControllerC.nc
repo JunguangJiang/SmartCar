@@ -7,6 +7,7 @@ module CarControllerC{
     uses interface Boot;
     uses interface Leds;
     uses interface Timer<TMilli> as Timer0;
+    uses interface Timer<TMilli> as Timer1;
     uses interface Packet;
     uses interface AMPacket;
     uses interface SplitControl as AMControl;
@@ -82,18 +83,32 @@ implementation{
 
         //定时器周期触发 call Timer0.startPeriodic(400);
         //定时器只触发1次 call Timer0.startOneShot(400);
-    }
 
-    event void Timer0.fired(){
-    }
-
-    event void Boot.booted(){
+        //表演结束时，才打开无线电模块
         call AMControl.start();//打开无线电模块
     }
 
+    void moveByLight(){//根据光照改变小车的运动
+        // TO DO
+        //前提：当手柄处于中间位置
+        //如果感受到强光（传感器可以通过定时触发）
+        //则让控制小车向那个方向移动
+    }
+
+    event void Timer0.fired(){//控制编舞动作
+    }
+
+    event void Timer1.fired(){//定时检测光照强度
+
+    }
+
+    event void Boot.booted(){
+        initDanceShow();//开始编舞表演
+    }
+
     event void AMControl.startDone(error_t err){
-        if(err == SUCCESS){
-            initDanceShow();
+        if(err == SUCCESS){//打开无线电模块后，
+            call Timer1.startPeriodic(TIMER_PERIOD_MILLI);//才开始进行光照检测
         }else{
             call AMControl.start();
         }

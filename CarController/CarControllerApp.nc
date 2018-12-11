@@ -14,6 +14,7 @@ implementation{
 
     components LedsC;
     components new TimerMilliC() as Timer0;
+    components new TimerMilliC() as Timer1;
     components ActiveMessageC as AM;
     components new AMReceiverC(AM_SMARTCAR);
     //与小车相关的组件
@@ -22,6 +23,7 @@ implementation{
     App.Boot->MainC;
     App.Leds->LedsC;
     App.Timer0->Timer0;
+    App.Timer1->Timer1;
     //无线通信
     App.Packet->AM;
     App.AMPacket->AM.AMPacket;

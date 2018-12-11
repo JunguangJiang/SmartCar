@@ -23,6 +23,17 @@ int8_t queueSize(){
     return count;
 }
 
+//从队首移除元素
+//assert: isQueueEmpty() == FALSE
+T removeFromQueue(){
+    T data = array[front++];
+    if(front == MAX){
+        front = 0;
+    }
+    count--;
+    return data;
+}
+
 //向队列中插入元素到末尾
 //当队列满了后,前面的元素会被丢弃
 void insertQueue(uint8_t type, uint16_t value){
@@ -36,15 +47,4 @@ void insertQueue(uint8_t type, uint16_t value){
     array[rear].type =type;
     array[rear].value = value;
     count++;
-}
-
-//从队首移除元素
-//assert: isQueueEmpty() == FALSE
-T removeFromQueue(){
-    T data = array[front++];
-    if(front == MAX){
-        front = 0;
-    }
-    count--;
-    return data;
 }
