@@ -18,32 +18,27 @@ implementation{
     int16_t vx,vy;//x轴和y轴的速度
 
     void processRadioMsg(r_message_t* radioMsg){//处理无线信息
-        if(radioMsg->x < XMIN){//小车向前
+        if(radioMsg->x < XMIN){//小车向左
             vx = XMIN - radioMsg->x;
-            printf("Car goes forward %i\n", vx);
-            call Wheel.goForward(vx);
-            call Leds.set(6);
-        }else if(radioMsg->x > XMAX){//小车向后
+            printf("Car turn left %i\n", vx);
+            call Wheel.turnLeft(vx);
+            call Leds.set(1);
+        }else if(radioMsg->x > XMAX){//小车向右
             vx = radioMsg->x - XMAX;
-            printf("Car goes backward %i\n", vx);
-            call Wheel.goBackward(vx);
-            call Leds.set(6);
-        }else if(radioMsg->y < YMIN){//小车向左
+            printf("Car turn right %i\n", vx);
+            call Wheel.turnRight(vx);
+            call Leds.set(2);
+        }else if(radioMsg->y < YMIN){//小车向前
             vy = YMIN - radioMsg->y;
-            printf("Car turns left %i\n", vy);
-            call Wheel.turnLeft(vy);
-            call Leds.set(7);
-        }else if(radioMsg->y > YMAX){
+            printf("Car go forward %i\n", vy);
+            call Wheel.goForward(vy);
+            call Leds.set(3);
+        }else if(radioMsg->y > YMAX){//小车向后
             vy = radioMsg->y - YMAX;
-            printf("Car turns right %i\n", vy);
-            call Wheel.turnRight(vy);
-            call Leds.set(7);
+            printf("Car go backward %i\n", vy);
+            call Wheel.goBackward(vy);
+            call Leds.set(4);
         }else{
-            printf("Car stops\n");
-            call Wheel.stop();
-            call Leds.set(0);
-        }
-        if(radioMsg->S1){//按下停止按钮
             printf("Car stops\n");
             call Wheel.stop();
             call Leds.set(0);
@@ -51,29 +46,45 @@ implementation{
         if(radioMsg->S2){//机械臂向左
             printf("Arm turns left\n");
             call Arm.turnLeft();
-            call Leds.set(1);
+            call Leds.set(5);
         }
         if(radioMsg->S3){//机械臂向右
             printf("Arm turns right\n");
             call Arm.turnRight();
-            call Leds.set(2);
-        }
-        if(radioMsg->S4){//按下机械臂归位按钮
-            printf("Arm returns home\n");
-            call Arm.home();
-            call Leds.set(3);
-        }
-        if(radioMsg->S5){//按下机械臂下降按钮
-            printf("Arm comes down\n");
-            call Arm.comeDown();
-            call Leds.set(4);
-        }
-        if(radioMsg->S6){//按下机械臂上升按钮
-            printf("Arm raises up\n");
-            call Arm.raiseUp();
             call Leds.set(5);
         }
+        if(radioMsg->S4){//按下机械臂上升按钮
+            printf("Arm raises up\n");
+            call Arm.raiseUp();
+            call Leds.set(6);
+        }
+        if(radioMsg->S6){//按下机械臂下降按钮
+            printf("Arm comes down\n");
+            call Arm.comeDown();
+            call Leds.set(6);
+        }
+        if(radioMsg->S1){//按下机械臂归位按钮
+            printf("Arm returns home\n");
+            call Arm.home();
+            call Leds.set(7);
+        }
         printfflush();
+    }
+
+    void initDanceShow(){//一开始的编舞表演
+        //TO DO
+        //以下步骤仅供参考
+        //先将编舞动作存到一个数组中
+        //然后每隔400ms从数组中取出一个动作并执行。注意：机械臂归位动作完成后需要间隔800ms。
+        //执行一个动作的例子：
+        //call Arm.comeDown();//让机械臂下降
+        //call Leds.set(6);//点亮小灯助兴
+
+        //定时器周期触发 call Timer0.startPeriodic(400);
+        //定时器只触发1次 call Timer0.startOneShot(400);
+    }
+
+    event void Timer0.fired(){
     }
 
     event void Boot.booted(){
@@ -82,26 +93,13 @@ implementation{
 
     event void AMControl.startDone(error_t err){
         if(err == SUCCESS){
-            call Timer0.startPeriodic(TIMER_PERIOD_MILLI_TEST);
+            initDanceShow();
         }else{
             call AMControl.start();
         }
     }
 
     event void AMControl.stopDone(error_t err){
-    }
-
-    r_message_t r_message;
-    event void Timer0.fired(){
-        r_message.S1 = FALSE;
-        r_message.S2 = FALSE;
-        r_message.S3 = TRUE;
-        r_message.S4 = FALSE;
-        r_message.S5 = TRUE;
-        r_message.S6 = FALSE;
-        r_message.x = 2000;
-        r_message.y = 2000;
-        processRadioMsg(&r_message);
     }
 
     event message_t* Receive.receive(message_t* msg, void* payload, uint8_t len){

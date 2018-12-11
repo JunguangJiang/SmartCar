@@ -4,12 +4,12 @@
 enum{
     AM_SMARTCAR=5,//无线通信时的AM标志号，接收方和发送方需要相同
     TIMER_PERIOD_MILLI = 250,//定时器触发时间间隔
-    TIMER_PERIOD_MILLI_TEST = 2500,//定时器触发时间间隔
+    TIMER_PERIOD_MILLI_TEST = 2500,//小车控制中测试用，定时器触发时间间隔
 
     MIN_SPEED = 0,//最小速度
     MAX_SPEED = 1600,//最大速度
     
-    MIN_ANGLE = 1800,//最小转动角度
+    MIN_ANGLE = 700,//最小转动角度
     MAX_ANGLE = 5000,//最大转动角度
     DELTA_ANGLE0 = 400,
     DELTA_ANGLE1 = 400,

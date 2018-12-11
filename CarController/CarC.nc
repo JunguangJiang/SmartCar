@@ -12,9 +12,9 @@ implementation{
 
     components HplMsp430Usart0C;
     components new Msp430Uart0C();
-    //components HplMsp430GeneralIOC;
+    components new TimerMilliC() as Timer0;
+
     CarP.Resource -> Msp430Uart0C;
     CarP.HplMsp430Usart -> HplMsp430Usart0C;
-    //CarP.HplMsp430UsartInterrupts -> HplMsp430Usart0C;
-    //CarP.HplMsp430GeneralIO -> HplMsp430GeneralIOC.Port20;
+    CarP.Timer0 -> Timer0;
 }

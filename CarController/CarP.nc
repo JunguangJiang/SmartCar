@@ -11,9 +11,7 @@ module CarP @safe(){
     uses{
         interface Resource;
         interface HplMsp430Usart;
-        
-        //interface HplMsp430UsartInterrupts;
-        //interface HplMsp430GeneralIO;
+        interface Timer<TMilli> as Timer0;
     }
 }
 implementation{
@@ -76,43 +74,43 @@ implementation{
         angle[2] = INIT_ANGLE2;
     }
 
-    command error_t Arm.comeDown(){
+    command error_t Arm.raiseUp(){
         atomic{
             angle[0] -= DELTA_ANGLE0;
             angle[0] = max(MIN_ANGLE, angle[0]);
         }
         printf("angle0=%i\n",angle[0]);
-        insertQueue(1,angle[0]);
+        insertQueue(7,angle[0]);
         return call Resource.request();
     }
 
-    command error_t Arm.raiseUp(){
+    command error_t Arm.comeDown(){
         atomic{
             angle[0] += DELTA_ANGLE0;
             angle[0] = min(MAX_ANGLE, angle[0]);
         }
         printf("angle0=%i\n",angle[0]);
-        insertQueue(1,angle[0]);
-        return call Resource.request();
-    }
-
-    command error_t Arm.turnLeft(){
-        atomic{
-            angle[1] -= DELTA_ANGLE1;
-            angle[1] = max(MIN_ANGLE, angle[1]);
-        }
-        printf("angle1=%i\n",angle[1]);
-        insertQueue(7,angle[1]);
+        insertQueue(7,angle[0]);
         return call Resource.request();
     }
 
     command error_t Arm.turnRight(){
         atomic{
+            angle[1] -= DELTA_ANGLE1;
+            angle[1] = max(MIN_ANGLE, angle[1]);
+        }
+        printf("angle1=%i\n",angle[1]);
+        insertQueue(1,angle[1]);
+        return call Resource.request();
+    }
+
+    command error_t Arm.turnLeft(){
+        atomic{
             angle[1] += DELTA_ANGLE1;
             angle[1] = min(MAX_ANGLE, angle[1]);
         }
         printf("angle1=%i\n",angle[1]);
-        insertQueue(7,angle[1]);
+        insertQueue(1,angle[1]);
         return call Resource.request();
     }
 
@@ -120,14 +118,14 @@ implementation{
         initAngle();
         insertQueue(1, angle[0]);
         insertQueue(7, angle[1]);
-        insertQueue(8,angle[2]);
+        //insertQueue(8,angle[2]);
         return call Resource.request();
     }
 
     event void Resource.granted(){
         call HplMsp430Usart.setModeUart(&config);
         call HplMsp430Usart.enableUart();
-        while(!isQueueEmpty()){
+        if(!isQueueEmpty()){
             atomic{
                 U0CTL &= ~SYNC;
                 printf("Queue size=%i\n", queueSize());
@@ -146,5 +144,14 @@ implementation{
             }       
         }
         call Resource.release();
+        if(!isQueueEmpty()){//如果队列非空，则等待400ms后再次使用串口资源
+            call Timer0.startOneShot(400);
+        }
+    }
+
+    event void Timer0.fired(){
+        if(!isQueueEmpty()){
+            call Resource.request();
+        }
     }
 }
