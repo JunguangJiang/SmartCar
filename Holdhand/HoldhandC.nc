@@ -1,5 +1,6 @@
 #include <Timer.h>
 #include "../SmartCar.h"
+#include "printf.h"
 module HoldhandC {
     uses interface Boot;
     uses interface Leds;
@@ -79,6 +80,13 @@ implementation {
             rpkt->S4 = currentPkt.S4;
             rpkt->S5 = currentPkt.S5;
             rpkt->S6 = currentPkt.S6;
+            printf("S1:%d\n", currentPkt.S1);
+            printf("S2:%d\n", currentPkt.S2);
+            printf("S3:%d\n", currentPkt.S3);
+            printf("S4:%d\n", currentPkt.S4);
+            printf("S5:%d\n", currentPkt.S5);
+            printf("S6:%d\n", currentPkt.S6);
+            printfflush();
             rpkt->x = currentPkt.x;
             rpkt->y = currentPkt.y;
             /* printf("button:%i\n", rpkt->S1);
@@ -110,27 +118,27 @@ implementation {
     }
 
     event void Button.readS1Done(error_t state) {
-        currentPkt.S1 = state;
+        currentPkt.S1 = !state;
     }
 
     event void Button.readS2Done(error_t state) {
-        currentPkt.S2 = state;
+        currentPkt.S4 = !state;
     }
 
     event void Button.readS3Done(error_t state) {
-        currentPkt.S3 = state;
+        currentPkt.S2 = !state;
     }
 
     event void Button.readS4Done(error_t state) {
-        currentPkt.S4 = state;
+        currentPkt.S5 = FALSE;
     }
 
     event void Button.readS5Done(error_t state) {
-        currentPkt.S5 = state;
+        currentPkt.S3 = !state;
     }
 
     event void Button.readS6Done(error_t state) {
-        currentPkt.S6 = state;
+        currentPkt.S6 = !state;
     }
 
     event void ReadX.readDone(error_t result, uint16_t data) {
