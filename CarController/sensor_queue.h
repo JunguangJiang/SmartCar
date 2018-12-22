@@ -4,20 +4,21 @@
 #define S_MAX 4 //队列大小
 #define S_T uint16_t //队列中的数据类型
 #define BLINK_THRESHOLD 500 //两次光照差值大于500认为是一次闪烁
-#define BLINK_CONTROL 16
+#define BLINK_CONTROL 16 //blink数组长度
 int8_t blink_sequence_number = 0;
-static int8_t sign;
-static uint16_t s_result;
-static int8_t i_loop;
-static int8_t sign_result;
 enum DanceControl blink[] = {
     A_UP, A_UP, A_UP, A_UP, A_UP, A_UP, A_UP, A_UP, A_DOWN, A_DOWN, A_DOWN, A_DOWN, A_DOWN, A_DOWN, A_DOWN, A_DOWN
-};
+}; //有闪光时重复进行机械臂上上下下的循环动作
 
 static S_T s_array[S_MAX] = {0};
 static int8_t s_front = 0;
 static int8_t s_rear = -1;
 static int8_t s_count = 0;
+
+static int8_t sign;
+static uint16_t s_result;
+static int8_t i_loop;
+static int8_t sign_result;
 
 S_T s_peekQueue(){
     return s_array[s_front];
@@ -60,7 +61,7 @@ void s_insertQueue(uint16_t value){
     s_count++;
 }
 
-//光源是否正在以300ms/次的速度闪烁
+//光源是否正在以当前光照传感器采样的速度闪烁
 int8_t s_isBlinking(){
     if(!s_isQueueFull()){
         return 0;

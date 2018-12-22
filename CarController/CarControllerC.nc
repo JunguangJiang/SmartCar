@@ -26,26 +26,22 @@ module CarControllerC{
 implementation{
     int16_t vx,vy;//x轴和y轴的速度
     
-    #define LIGHT_SAMPLING_FREQUENCY 300 //光照传感器采样频率
-    #define HUMIDITY_SAMPLING_FREQUENCY 200 //湿度传感器采样频率
+    #define LIGHT_SAMPLING_FREQUENCY 300 //光照传感器采样间隔(单位:毫秒)
+    #define HUMIDITY_SAMPLING_FREQUENCY 200 //温湿度传感器采样间隔(单位:毫秒)
     #define HUMIDITY_INITIAL_TIME 20 //先测量20次湿度取平均值作为环境的初始湿度
-    #define SLOWEST_SPEED 300 //初始湿度下的速度为300，湿度增加时速度增加
-    #define FASTEST_SPEED 700 //最大速度700
     #define LIGHT_THRESHOLD 500 //驱动小车前进的光照强度临界值为500
-    #define HUMIDITY_THRESHOLD_RATE 2 //驱动小车后退的湿度临界值为初始湿度的1.6倍
-    uint16_t temperature = 0;
-    uint16_t humidity = 0;
-    uint16_t light = 0;
-    uint16_t last_light = 0;
-    uint16_t last_humidity = 0;
-    uint16_t initial_humidity = 0;
+    #define HUMIDITY_THRESHOLD_RATE 2 //驱动小车后退的湿度临界值为初始湿度的2倍
+    uint16_t temperature = 0; //当前温度
+    uint16_t humidity = 0; //当前湿度
+    uint16_t light = 0; //当前光强
+    uint16_t last_light = 0; //上次传感器取样得到的光强
+    uint16_t last_humidity = 0; //上次传感器取样得到的湿度
+    uint16_t initial_humidity = 0; //环境湿度
 
     uint16_t speed = 500; //编舞时小车前进和后退的速度
     uint16_t angle_speed = 3900; //编舞时小车左转和右转的角度
-    //uint16_t h_speed = 300; //初始湿度下的速度
     uint8_t h_measure_time = 0; //测量湿度的次数，用于测量初始湿度
 
-    uint8_t is_rotating = 0; //是否检测到了相应的闪光
     uint8_t is_dancing = 1; //是否正在编舞
     
     void processRadioMsg(r_message_t* radioMsg){//处理无线信息
@@ -142,25 +138,23 @@ implementation{
                 break;
         }
     }
+
     void moveByLightAndHumidity(){//根据光照改变小车的运动
-        if(s_isBlinking()){//正在闪烁
+        if(s_isBlinking()){//外部光源正在以当前光照传感器采样频率闪烁
             if(blink_sequence_number < BLINK_CONTROL){
                 actByControl(blink[blink_sequence_number]);
                 blink_sequence_number++;
-            }
-            else if(blink_sequence_number == BLINK_CONTROL){
-                blink_sequence_number = 0;
             }
             else{
                 blink_sequence_number = 0;
             }
         }
-        else if(light > 500){//强光驱动前进
+        else if(light > LIGHT_THRESHOLD){//强光驱动前进
             call Wheel.goForward(speed);
             call Leds.led2Toggle();
             last_light = light;
         }
-        else if(last_light > 500){//光源离开后停止前进
+        else if(last_light > LIGHT_THRESHOLD){//光源离开后停止前进
             call Wheel.stop();
             last_light = light;
         }
@@ -209,8 +203,8 @@ implementation{
         is_dancing = 0;
         call Leds.set(0);
         call AMControl.start();//打开无线电模块
-        call Timer2.startPeriodic(LIGHT_SAMPLING_FREQUENCY);
-        call Timer3.startPeriodic(HUMIDITY_SAMPLING_FREQUENCY);
+        call Timer2.startPeriodic(LIGHT_SAMPLING_FREQUENCY); //定时读取光照传感器数据
+        call Timer3.startPeriodic(HUMIDITY_SAMPLING_FREQUENCY); //定时读取温湿度传感器数据
     }
 
     event void Temperature.readDone(error_t result, uint16_t value) {
@@ -223,13 +217,12 @@ implementation{
             temperature = 0xffff;
         }
         printf("Temperature=%u\n", temperature);
-        //call Leds.led0Toggle();
     }
 
     event void Humidity.readDone(error_t result, uint16_t value) {
         printf("Humidity origin value=%u\n", value);
         if (result == SUCCESS){
-            humidity = -4 + 0.0405*value + (-0.0000028)*(value*value); //转换成相对湿度（百分比）
+            humidity = -4 + 0.0405*value + (-0.0000028)*(value*value); //转换成相对湿度(百分比)
             humidity = (temperature-25)*(0.01+0.00008*value)+humidity; //转换成带温度补偿的湿度值
             if(h_measure_time < HUMIDITY_INITIAL_TIME){
                 h_measure_time++;
@@ -243,7 +236,6 @@ implementation{
         else
             humidity = 0xffff;
         printf("Humidity=%u\n", humidity);
-        //call Leds.led1Toggle();
     }
 
     event void Light.readDone(error_t result, uint16_t value) {
@@ -254,7 +246,6 @@ implementation{
         else
             light = 0xffff;
         printf("Light=%u\n", light);
-        //call Leds.led2Toggle();
     }
 
     event void Boot.booted(){
