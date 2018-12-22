@@ -3,6 +3,7 @@
 #include "../Util.h"
 #include "printf.h"
 #include "dance.h"
+#include "sensor_queue.h"
 
 module CarControllerC{
     uses interface Boot;
@@ -11,6 +12,7 @@ module CarControllerC{
     uses interface Timer<TMilli> as Timer1;
     uses interface Timer<TMilli> as Timer2;
     uses interface Timer<TMilli> as Timer3;
+    uses interface Timer<TMilli> as Timer4;
     uses interface Packet;
     uses interface AMPacket;
     uses interface SplitControl as AMControl;
@@ -29,18 +31,22 @@ implementation{
     #define HUMIDITY_INITIAL_TIME 20 //先测量20次湿度取平均值作为环境的初始湿度
     #define SLOWEST_SPEED 300 //初始湿度下的速度为300，湿度增加时速度增加
     #define FASTEST_SPEED 700 //最大速度700
+    #define LIGHT_THRESHOLD 500 //驱动小车前进的光照强度临界值为500
+    #define HUMIDITY_THRESHOLD_RATE 2 //驱动小车后退的湿度临界值为初始湿度的1.6倍
     uint16_t temperature = 0;
     uint16_t humidity = 0;
     uint16_t light = 0;
     uint16_t last_light = 0;
+    uint16_t last_humidity = 0;
     uint16_t initial_humidity = 0;
 
     uint16_t speed = 500; //编舞时小车前进和后退的速度
     uint16_t angle_speed = 3900; //编舞时小车左转和右转的角度
-    uint16_t h_speed = 300; //初始湿度下的速度
+    //uint16_t h_speed = 300; //初始湿度下的速度
     uint8_t h_measure_time = 0; //测量湿度的次数，用于测量初始湿度
 
     uint8_t is_rotating = 0; //是否检测到了相应的闪光
+    uint8_t is_dancing = 1; //是否正在编舞
     
     void processRadioMsg(r_message_t* radioMsg){//处理无线信息
         if(radioMsg->x < XMIN){//小车向左
@@ -97,103 +103,114 @@ implementation{
     }
 
     void initDanceShow(){//一开始的编舞表演
-        //TO DO
-        //以下步骤仅供参考
-        //先将编舞动作存到一个数组中
-        //然后每隔400ms从数组中取出一个动作并执行。注意：机械臂归位动作完成后需要间隔800ms。
-        //执行一个动作的例子：
-        //call Arm.comeDown();//让机械臂下降
-        //call Leds.set(6);//点亮小灯助兴
-
-        //定时器周期触发 call Timer0.startPeriodic(400);
-        //定时器只触发1次 call Timer0.startOneShot(400);
-
-        //表演结束时，才打开无线电模块
         call Timer0.startPeriodic(1000);
         call Timer1.startPeriodic(500);
-        //call AMControl.start();//打开无线电模块
+        call Timer4.startOneShot(1000 * DANCE_CONTROL_LOOP);
     }
-
-    void moveByLight(){//根据光照改变小车的运动
-        // TO DO
-        //前提：当手柄处于中间位置
-        //如果感受到强光(传感器可以通过定时触发)
-        //则让控制小车向那个方向移动
-        if(light > 500){
-            call Wheel.goForward(h_speed);
+    
+    void actByControl(enum DanceControl c){
+        switch(c){
+            case W_FORWARD:
+                call Wheel.goForward(speed);
+                break;
+            case W_BACKWORD:
+                call Wheel.goBackward(speed);
+                break;
+            case W_LEFT:
+                call Wheel.turnLeft(angle_speed);
+                break;
+            case W_RIGHT:
+                call Wheel.turnRight(angle_speed);
+                break;
+            case W_STOP:
+                call Wheel.stop();
+                break;
+            case A_DOWN:
+                call Arm.comeDown();
+                break;
+            case A_UP:
+                call Arm.raiseUp();
+                break;
+            case A_LEFT:
+                call Arm.turnLeft();
+                break;
+            case A_RIGHT:
+                call Arm.turnRight();
+                break;
+            case A_HOME:
+                call Arm.home();
+                break;
+        }
+    }
+    void moveByLightAndHumidity(){//根据光照改变小车的运动
+        if(s_isBlinking()){//正在闪烁
+            if(blink_sequence_number < BLINK_CONTROL){
+                actByControl(blink[blink_sequence_number]);
+                blink_sequence_number++;
+            }
+            else if(blink_sequence_number == BLINK_CONTROL){
+                blink_sequence_number = 0;
+            }
+            else{
+                blink_sequence_number = 0;
+            }
+        }
+        else if(light > 500){//强光驱动前进
+            call Wheel.goForward(speed);
             call Leds.led2Toggle();
             last_light = light;
         }
-        else if(last_light > 500){
+        else if(last_light > 500){//光源离开后停止前进
             call Wheel.stop();
             last_light = light;
+        }
+        else if(humidity > HUMIDITY_THRESHOLD_RATE * initial_humidity){//湿度较大时后退
+            call Wheel.goBackward(speed);
+            last_humidity = humidity;
+        }
+        else if(last_humidity > HUMIDITY_THRESHOLD_RATE * initial_humidity){//湿度降低后停止后退
+            call Wheel.stop();
+            last_humidity = humidity;
         }
     }
 
     event void Timer0.fired(){//控制编舞动作
         if(dance_sequence_number < DANCE_CONTROL_LOOP){
-            switch(dance_control[dance_sequence_number]){
-                case W_FORWARD:
-                    call Wheel.goForward(speed);
-                    break;
-                case W_BACKWORD:
-                    call Wheel.goBackward(speed);
-                    break;
-                case W_LEFT:
-                    call Wheel.turnLeft(angle_speed);
-                    break;
-                case W_RIGHT:
-                    call Wheel.turnRight(angle_speed);
-                    break;
-                case W_STOP:
-                    call Wheel.stop();
-                    break;
-                case A_DOWN:
-                    call Arm.comeDown();
-                    break;
-                case A_UP:
-                    call Arm.raiseUp();
-                    break;
-                case A_LEFT:
-                    call Arm.turnLeft();
-                    break;
-                case A_RIGHT:
-                    call Arm.turnRight();
-                    break;
-                case A_HOME:
-                    call Arm.home();
-                    break;
-            }
+            actByControl(dance_control[dance_sequence_number]);
             dance_sequence_number++;
-        }
-        else{
-            call Timer0.stop();
-            call Timer1.stop();
-            call Leds.set(0);
-            call AMControl.start();//打开无线电模块
-            call Timer2.startPeriodic(LIGHT_SAMPLING_FREQUENCY);
-            call Timer3.startPeriodic(HUMIDITY_SAMPLING_FREQUENCY);
         }
     }
 
     event void Timer1.fired(){//控制编舞过程中LED灯的亮灭
-        call Leds.set(led_control[led_sequence_number]);
-        if(led_sequence_number == LED_CONTROL_LOOP - 1){
-            led_sequence_number = 0;
-        }
-        else{
-            led_sequence_number++;
+        if(is_dancing){
+            call Leds.set(led_control[led_sequence_number]);
+            if(led_sequence_number == LED_CONTROL_LOOP - 1){
+                led_sequence_number = 0;
+            }
+            else{
+                led_sequence_number++;
+            }
         }
     }
 
     event void Timer2.fired(){ //定时检测光照强度
         call Light.read(); //读取光照值
-        moveByLight();
+        moveByLightAndHumidity();
     }
 
     event void Timer3.fired(){
         call Temperature.read(); //读取温度值
         call Humidity.read(); //读取湿度值
+    }
+
+    event void Timer4.fired(){
+        call Timer0.stop();
+        call Timer1.stop();
+        is_dancing = 0;
+        call Leds.set(0);
+        call AMControl.start();//打开无线电模块
+        call Timer2.startPeriodic(LIGHT_SAMPLING_FREQUENCY);
+        call Timer3.startPeriodic(HUMIDITY_SAMPLING_FREQUENCY);
     }
 
     event void Temperature.readDone(error_t result, uint16_t value) {
@@ -222,14 +239,6 @@ implementation{
                 initial_humidity /= HUMIDITY_INITIAL_TIME;
                 h_measure_time++;
             }
-            else{ //更新h_speed，离散到200-600之间
-                double rate = humidity / (double)initial_humidity;
-                if(rate < 1)
-                    rate = 1;
-                else if(rate > 2)
-                    rate = 2;
-                h_speed = SLOWEST_SPEED + (rate - 1) * (FASTEST_SPEED-SLOWEST_SPEED);
-            }
         }
         else
             humidity = 0xffff;
@@ -240,8 +249,9 @@ implementation{
     event void Light.readDone(error_t result, uint16_t value) {
         if (result == SUCCESS){ 
             light = value;
+            s_insertQueue(value);
         }
-        else 
+        else
             light = 0xffff;
         printf("Light=%u\n", light);
         //call Leds.led2Toggle();

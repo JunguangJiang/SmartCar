@@ -17,6 +17,7 @@ implementation{
     components new TimerMilliC() as Timer1;
     components new TimerMilliC() as Timer2;
     components new TimerMilliC() as Timer3;
+    components new TimerMilliC() as Timer4;
     components ActiveMessageC as AM;
     components new AMReceiverC(AM_SMARTCAR);
     //与小车相关的组件
@@ -31,6 +32,7 @@ implementation{
     App.Timer1->Timer1;
     App.Timer2->Timer2;
     App.Timer3->Timer3;
+    App.Timer4->Timer4;
     //无线通信
     App.Packet->AM;
     App.AMPacket->AM.AMPacket;
