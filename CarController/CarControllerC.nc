@@ -151,7 +151,7 @@ implementation{
         }
         else if(light > LIGHT_THRESHOLD){//强光驱动前进
             call Wheel.goForward(speed);
-            call Leds.led2Toggle();
+            // call Leds.led2Toggle();
             last_light = light;
         }
         else if(last_light > LIGHT_THRESHOLD){//光源离开后停止前进
@@ -223,7 +223,7 @@ implementation{
         printf("Humidity origin value=%u\n", value);
         if (result == SUCCESS){
             humidity = -4 + 0.0405*value + (-0.0000028)*(value*value); //转换成相对湿度(百分比)
-            humidity = (temperature-25)*(0.01+0.00008*value)+humidity; //转换成带温度补偿的湿度值
+            //humidity = (temperature-25)*(0.01+0.00008*value)+humidity; //转换成带温度补偿的湿度值
             if(h_measure_time < HUMIDITY_INITIAL_TIME){
                 h_measure_time++;
                 initial_humidity += humidity;
